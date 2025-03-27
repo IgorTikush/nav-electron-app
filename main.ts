@@ -39,7 +39,7 @@ const connectUSBDevice = (): Promise<{ connected: boolean, error?: Error }> => {
       const devices = usb.getDeviceList();
       console.log(`Found ${devices.length} USB devices`);
 
-      const targetDevice = devices[1];
+      const targetDevice = devices[0];
 
       if (!targetDevice) {
         console.log('Target USB device not found');
