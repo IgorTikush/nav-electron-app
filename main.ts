@@ -37,8 +37,11 @@ const connectUSBDevice = async (): Promise<{ connected: boolean, error?: Error }
     console.log('Available ports:', ports);
 
     // Find your device (you can identify it by vendorId or other properties)
-    const port = ports.find(p => p.productId === '57105');
-
+    let port = ports.find(p => p.productId === '57105');
+    console.log('Port:', port);
+    if (!port && ports.length) {
+      port = ports[0];
+    }
     if (!port) {
       return { connected: false, error: new Error('Device not found') };
     }
