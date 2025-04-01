@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
+import { SerialPort } from 'serialport';
 
 interface USBDevice {
   connected: boolean;
@@ -29,53 +30,37 @@ const createWindow = (): void => {
   win.webContents.openDevTools();
 };
 
-const connectUSBDevice = (): Promise<{ connected: boolean, error?: Error }> => {
-  return new Promise((resolve, reject) => {
-    try {
-      console.log('Connecting to USB device...');
+const connectUSBDevice = async (): Promise<{ connected: boolean, error?: Error }> => {
+  try {
+    // List available ports
+    const ports = await SerialPort.list();
+    console.log('Available ports:', ports);
 
-      const usb = require('usb');
+    // Find your device (you can identify it by vendorId or other properties)
+    const port = ports.find(p => p.productId === '57105');
 
-      const devices = usb.getDeviceList();
-      console.log(`Found ${devices.length} USB devices`);
-
-      const targetDevice = devices[0];
-
-      if (!targetDevice) {
-        console.log('Target USB device not found');
-        device.connected = false;
-        resolve({ connected: false });
-        return;
-      }
-      console.log(targetDevice);
-
-      targetDevice.open();
-
-      const api = targetDevice.interfaces[0];
-
-      if (api.isKernelDriverActive()) {
-        api.detachKernelDriver();
-      }
-      api.claim();
-
-      const inEndpoint = api.endpoints.find((ep: any) => ep.direction === 'in');
-      const outEndpoint = api.endpoints.find((ep: any) => ep.direction === 'out');
-      device.interface = api;
-      device.inEndpoint = inEndpoint;
-      device.outEndpoint = outEndpoint;
-
-      device.connected = true;
-      console.log('USB device connected successfully');
-
-      startDeviceListener();
-
-      resolve({ connected: true });
-    } catch (error: any) {
-      console.error('Error connecting to USB device:', error);
-      device.connected = false;
-      resolve({ connected: false, error: error });
+    if (!port) {
+      return { connected: false, error: new Error('Device not found') };
     }
-  });
+
+    const serialPort = new SerialPort({
+      path: port.path,
+      baudRate: 9600  // adjust based on your device
+    });
+
+    // Set up event handlers
+    serialPort.on('open', () => {
+      console.log('Connection opened');
+    });
+
+    serialPort.on('data', (data) => {
+      console.log('Data received:', data);
+    });
+
+    return { connected: true };
+  } catch (error) {
+    return { connected: false, error: new Error('Failed to connect to USB device') };
+  }
 };
 
 const checkFirmwareVersion = (): Promise<{ version: string | null }> => {

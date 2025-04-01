@@ -37,6 +37,7 @@
     "react": "^19.0.0-rc.1",
     "react-dom": "^19.0.0-rc.1",
     "react-leaflet": "^5.0.0-rc.2",
+    "serialport": "^13.0.0",
     "usb": "^2.15.0"
   }
 }
